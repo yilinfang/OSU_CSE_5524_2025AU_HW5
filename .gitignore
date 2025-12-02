@@ -1,0 +1,11 @@
+__pycache__/
+tmp/
+data/
+.DS_Store
+*.zip
+*.jpg
+*.png
+*.pdf
+*.pptx
+*.md
+*.npz
