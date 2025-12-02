@@ -131,15 +131,47 @@ def draw_shape(shape, color):
     cy = random.uniform(0.3,0.7)*IMG_SIZE
     if shape=='circle':
         #### Your job 1 starts here ####
-        pass
+        r = s / 2.0
+        left_up_point = (cx - r, cy - r)
+        right_down_point = (cx + r, cy + r)
+        d.ellipse([left_up_point, right_down_point], fill=color)
         #### Your job 1 ends here ####
     elif shape=='square':
         #### Your job 1 starts here ####
-        pass
+        half = s / 2.0
+        corners = [
+            (cx - half, cy - half),
+            (cx + half, cy - half),
+            (cx + half, cy + half),
+            (cx - half, cy + half),
+        ]
+        theta = random.uniform(0.0, 2.0 * math.pi)
+        cos_t = math.cos(theta)
+        sin_t = math.sin(theta)
+        rotated = []
+        for x, y in corners:
+            xr = x * cos_t - y * sin_t
+            yr = x * sin_t + y * cos_t
+            rotated.append((cx + xr, cy + yr))
+        d.polygon(rotated, fill=color)
         #### Your job 1 ends here ####
     elif shape=='triangle':
         #### Your job 1 starts here ####
-        pass
+        h = s * math.sqrt(3.0) / 2.0
+        verts = [
+            (0.0, 2.0 * h / 3.0),
+            (-s / 2.0, -h / 3.0),
+            (s / 2.0, -h / 3.0),
+        ]
+        theta = random.uniform(0.0, 2.0 * math.pi)
+        cos_t = math.cos(theta)
+        sin_t = math.sin(theta)
+        rotated = []
+        for x, y in verts:
+            xr = x * cos_t - y * sin_t
+            yr = x * sin_t + y * cos_t
+            rotated.append((cx + xr, cy + yr))
+        d.polygon(rotated, fill=color)
         #### Your job 1 ends here ####
     return img
 
