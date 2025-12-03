@@ -140,10 +140,10 @@ def draw_shape(shape, color):
         #### Your job 1 starts here ####
         half = s / 2.0
         corners = [
-            (cx - half, cy - half),
-            (cx + half, cy - half),
-            (cx + half, cy + half),
-            (cx - half, cy + half),
+            (-half, -half),
+            (half, -half),
+            (half, half),
+            (-half, half),
         ]
         theta = random.uniform(0.0, 2.0 * math.pi)
         cos_t = math.cos(theta)
