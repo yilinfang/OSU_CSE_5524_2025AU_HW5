@@ -237,7 +237,8 @@ class ColorShapeDataset(Dataset):
                     transform: Optional torchvision transform to apply to each PIL image.
         """
         #### Your job 2 starts here ####
-        pass
+        self.paths = all_paths
+        self.transform = transform if transform is not None else build_transform()
         #### Your job 2 ends here ####
 
     def __len__(self) -> int:
@@ -256,8 +257,11 @@ class ColorShapeDataset(Dataset):
                     color_idx: Color label as an int.
         """
         #### Your job 2 starts here ####
-        # The line below is just a placeholder. Remove it and implement the method.
-        img, shape_idx, color_idx = None, None, None
+        path = self.paths[idx]
+        img_pil = Image.open(path).convert('RGB')
+        img_tensor = self.transform(img_pil)
+        shape_idx, color_idx = parse_labels(path)
+        img, shape_idx, color_idx = img_tensor, shape_idx, color_idx
         #### Your job 2 ends here ####
         return img, shape_idx, color_idx
 
@@ -282,7 +286,15 @@ class ConvAutoencoder(nn.Module):
         enc_channels = [3, 16, 32, 64, 64, 128, 128]
         encoder_layers = []
         #### Your job 2 starts here ####
-        pass
+        for i in range(len(enc_channels) - 1):
+            in_ch = enc_channels[i]
+            out_ch = enc_channels[i + 1]
+            layer = nn.Sequential(
+                nn.Conv2d(in_ch, out_ch, kernel_size=3, stride=2, padding=1),
+                nn.BatchNorm2d(out_ch),
+                nn.ReLU(inplace=True)
+            )
+            encoder_layers.append(layer)
         #### Your job 2 ends here ####
         self.encoder_layers = nn.ModuleList(encoder_layers)
         self.enc_out_channels = enc_channels[-1]  # 128
@@ -290,7 +302,21 @@ class ConvAutoencoder(nn.Module):
         dec_channels = [128, 128, 64, 64, 32, 16, 3]
         decoder_layers = []
         #### Your job 2 starts here ####
-        pass
+        for i in range(len(dec_channels) - 2):
+            in_ch = dec_channels[i]
+            out_ch = dec_channels[i + 1]
+            layer = nn.Sequential(
+                nn.ConvTranspose2d(in_ch, out_ch, kernel_size=4, stride=2, padding=1),
+                nn.BatchNorm2d(out_ch),
+                nn.ReLU(inplace=True)
+            )
+            decoder_layers.append(layer)
+        # Final layer without BatchNorm and ReLU
+        final_layer = nn.Sequential(
+            nn.ConvTranspose2d(dec_channels[-2], dec_channels[-1], kernel_size=4, stride=2, padding=1),
+            nn.Sigmoid()
+        )
+        decoder_layers.append(final_layer)
         #### Your job 2 ends here ####
         self.decoder_layers = nn.ModuleList(decoder_layers)
 
@@ -308,8 +334,12 @@ class ConvAutoencoder(nn.Module):
                    intermediates (optional): List of tensors (one per encoder layer).
         """
         #### Your job 2 starts here ####
-        # The line below is just a placeholder. Remove it and implement the method.
-        latent, intermediates = None, None
+        intermediates = []
+        h = x
+        for layer in self.encoder_layers:
+            h = layer(h)
+            intermediates.append(h)
+        latent = h
         #### Your job 2 ends here ####
         if return_intermediate:
             return latent, intermediates
@@ -326,8 +356,10 @@ class ConvAutoencoder(nn.Module):
                     out: Reconstructed image tensor of shape (B, 3, IMG_SIZE, IMG_SIZE).
         """
         #### Your job 2 starts here ####
-        # The line below is just a placeholder. Remove it and implement the method.
-        out = None
+        h = latent
+        for layer in self.decoder_layers:
+            h = layer(h)
+        out = h
         #### Your job 2 ends here ####
         return out
 
@@ -354,8 +386,14 @@ def build_dataloader(data_dir: str,
     """
     all_paths = sorted(glob.glob(os.path.join(data_dir, '*.png')))
     #### Your job 2 starts here ####
-    # The line below is just a placeholder. Remove it and implement the method.
-    loader = None
+    dataset = ColorShapeDataset(all_paths, transform=build_transform())
+    loader = DataLoader(
+        dataset,
+        batch_size=batch_size,
+        shuffle=shuffle,
+        num_workers=num_workers,
+        pin_memory=True,
+    )
     #### Your job 2 ends here ####
     return loader
 
@@ -380,7 +418,25 @@ def train_autoencoder(model: ConvAutoencoder, train_loader: DataLoader,
             Saves {'model_state': model.state_dict()} to checkpoint_path.
     """
     #### Your job 2 starts here ####
-    pass
+    model.to(device)
+    model.train()
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+    criterion = nn.MSELoss()
+    for epoch in range(epochs):
+        running_loss = 0.0
+        n_samples = 0
+        for imgs, _, _ in train_loader:
+            imgs = imgs.to(device)
+            optimizer.zero_grad()
+            recon = model(imgs)
+            loss = criterion(recon, imgs)
+            loss.backward()
+            optimizer.step()
+            batch_size = imgs.size(0)
+            running_loss += loss.item() * batch_size
+            n_samples += batch_size
+        epoch_loss = running_loss / max(1, n_samples)
+        print(f"Epoch {epoch + 1}/{epochs} - train MSE: {epoch_loss:.6f}")
     #### Your job 2 ends here ####
     torch.save({'model_state': model.state_dict()}, checkpoint_path)
     # ------------------------------------------------------------------

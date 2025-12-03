@@ -2,6 +2,7 @@ __pycache__/
 tmp/
 data/
 .DS_Store
+*.pt
 *.zip
 *.jpg
 *.png
