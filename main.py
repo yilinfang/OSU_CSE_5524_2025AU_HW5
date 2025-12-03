@@ -478,7 +478,18 @@ def collect_embeddings(model: ConvAutoencoder, loader: DataLoader,
 
     with torch.no_grad():
         #### Your job 3 starts here ####
-        pass
+        for imgs, shape_labels, color_labels in loader:
+            imgs = imgs.to(device)
+            shape_labels = shape_labels.to(device)
+            color_labels = color_labels.to(device)
+            pixels_flat = flatten_feature(imgs)
+            features['pixels'].append(pixels_flat.cpu())
+            latent, intermediates = model.encode(imgs, return_intermediate=True)
+            for layer_idx, intermediate in enumerate(intermediates, start=1):
+                feat_flat = flatten_feature(intermediate)
+                features[f'layer_{layer_idx}'].append(feat_flat.cpu())
+            shapes.append(shape_labels.cpu())
+            colors.append(color_labels.cpu())
         #### Your job 3 ends here ####
 
     out_features = {name: torch.cat(tensors, dim=0) for name, tensors in features.items()}
@@ -548,7 +559,9 @@ def save_nearest_neighbor_grid_cross(
     """
 
     #### Your job 3 starts here ####
-    dist = None
+    q = F.normalize(query_embeddings, dim=1).cpu()
+    r = F.normalize(ref_embeddings, dim=1).cpu()
+    dist = torch.cdist(q, r)
     #### Your job 3 ends here ####
 
     Nq = len(query_dataset)
@@ -561,7 +574,9 @@ def save_nearest_neighbor_grid_cross(
     rows = []
     for q_idx in query_indices:
         #### Your job 3 starts here ####
-        nn_indices = None
+        d_row = dist[q_idx]
+        nn = torch.topk(d_row, k=neighbors, largest=False)
+        nn_indices = nn.indices.tolist()
         #### Your job 3 ends here ####
         # query from test set
         query_img = load_raw_tensor(query_dataset.paths[q_idx])  # (3, H, W)
@@ -619,7 +634,23 @@ def plot_layerwise_nn(color_accs, shape_accs, out_path: str):
         (including 'pixels' as layer 0).
     """
     #### Your job 3 starts here ####
-    pass
+    num_points = len(color_accs)
+    x = list(range(num_points))
+    layer_labels = ['pixels'] + [f'layer_{i}' for i in range(1, num_points)]
+    plt.figure(figsize=(6, 4))
+    plt.plot(x, color_accs, marker='o', label='color 1-NN acc')
+    plt.plot(x, shape_accs, marker='s', label='shape 1-NN acc')
+    plt.xticks(x, layer_labels, rotation=45)
+    plt.xlabel('feature layer')
+    plt.ylabel('accuracy (%)')
+    plt.ylim(0, 100)
+    plt.grid(True, linestyle='--', alpha=0.4)
+    plt.legend()
+    plt.tight_layout()
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    plt.savefig(out_path, dpi=200)
+    plt.close()
+    print(f"Saved layer-wise NN accuracy plot to {out_path}")
     #### Your job 3 ends here ####
 
 
@@ -683,7 +714,23 @@ def evaluate(model: ConvAutoencoder,
 
     for layer_name in layer_order:
         #### Your job 3 starts here ####
-        pass
+        feat_train = features_train[layer_name]
+        feat_test = features_test[layer_name]
+        color_acc = cross_nearest_neighbor_accuracy(
+            emb_query=feat_test,
+            labels_query=colors_test,
+            emb_ref=feat_train,
+            labels_ref=colors_train,
+        )
+        shape_acc = cross_nearest_neighbor_accuracy(
+            emb_query=feat_test,
+            labels_query=shapes_test,
+            emb_ref=feat_train,
+            labels_ref=shapes_train,
+        )
+        color_accs.append(color_acc)
+        shape_accs.append(shape_acc)
+        print(f"{layer_name:8s} | color: {color_acc:6.2f}% | shape: {shape_acc:6.2f}%")
         #### Your job 3 ends here ####
 
     # ---- plot figure like the reference ----
