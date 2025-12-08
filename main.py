@@ -636,16 +636,35 @@ def plot_layerwise_nn(color_accs, shape_accs, out_path: str):
     #### Your job 3 starts here ####
     num_points = len(color_accs)
     x = list(range(num_points))
-    layer_labels = ['pixels'] + [f'layer_{i}' for i in range(1, num_points)]
     plt.figure(figsize=(6, 4))
-    plt.plot(x, color_accs, marker='o', label='color 1-NN acc')
-    plt.plot(x, shape_accs, marker='s', label='shape 1-NN acc')
-    plt.xticks(x, layer_labels, rotation=45)
-    plt.xlabel('feature layer')
-    plt.ylabel('accuracy (%)')
-    plt.ylim(0, 100)
-    plt.grid(True, linestyle='--', alpha=0.4)
-    plt.legend()
+    plt.plot(x, color_accs, linestyle="-", marker="o", color="black", label="color")
+    plt.plot(x, shape_accs, linestyle="--", marker="o", color="black", label="shape")
+    mid_idx = num_points // 2
+    plt.text(
+        mid_idx,
+        color_accs[mid_idx],
+        "color",
+        ha="center",
+        va="center",
+        bbox=dict(boxstyle="square", facecolor="white", edgecolor="black"),
+    )
+    plt.text(
+        mid_idx,
+        shape_accs[mid_idx],
+        "shape",
+        ha="center",
+        va="center",
+        bbox=dict(
+            boxstyle="square", facecolor="white", edgecolor="black", linestyle="dashed"
+        ),
+    )
+    plt.xlabel("layer")
+    plt.ylabel("accuracy (%)")
+    min_y = min(min(color_accs), min(shape_accs))
+    min_y = max(0, min_y - 5)
+    max_y = max(max(color_accs), max(shape_accs))
+    max_y = min(100, max_y + 5)
+    plt.ylim(min_y, max_y)
     plt.tight_layout()
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     plt.savefig(out_path, dpi=200)
