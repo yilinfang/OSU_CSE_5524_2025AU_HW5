@@ -2,13 +2,23 @@
 
 ## What I changed
 
-I applied data augmentation techniques to the training dataset.
-More specifically, I added noise to 15% of the training samples with Gaussian noise, blurring, and geometric transformations (add black square to the shape).
+I applied data augmentation to the training data generation process.
+More specifically, I modified the code that generates training images so that each image has a small probability of being corrupted:
+- 85% clean
+- 5% Gaussian noise
+- 5% blurring
+- 5% black square occlusion
+
+Only one type of corruption is applied to each image.
 
 ## Why I think it helps
 
-__TODO__
+The test images contain noise and occlusion, while the original training set is fully clean.
+This mismatch causes the encoder to produce unstable latent features when evaluated on the noisy test images.
+Introducing a small amount of similar corruption into the training data reduces this mismatch.
+The encoder becomes less sensitive to noise and occlusion, and its latent space reflects shape structure more consistently.
+Using too much corruption hurts reconstruction, but a small amount (around 10–20%) improves robustness.
 
 ## The result
 
-Resulting shape accuracy of the best layer increased from 81.63% to 84.95%.
+The best-layer shape accuracy increased from 81.63% to 84.95%, showing that moderate corruption improves the representation quality for shape.

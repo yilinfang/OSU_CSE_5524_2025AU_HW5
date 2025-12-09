@@ -177,16 +177,14 @@ def draw_shape(shape, color):
 
     # Q4: Data augmentation
     from PIL import ImageFilter
-
     p_clean = 0.85
     p_gauss = 0.05
     p_blur = 0.05
     p_geom = 0.05
     r = random.random()
     if r < p_clean:
-        pass  # no augmentation
+        pass
     elif r < p_clean + p_gauss:
-        # Gaussian pixel noise
         arr = np.asarray(img).astype(np.float32) / 255.0
         std = random.uniform(0.02, 0.10)
         noise = np.random.normal(0.0, std, size=arr.shape).astype(np.float32)
@@ -194,16 +192,12 @@ def draw_shape(shape, color):
         arr_noisy = (arr_noisy * 255.0).astype(np.uint8)
         img = Image.fromarray(arr_noisy)
     elif r < p_clean + p_gauss + p_blur:
-        # blur / glow
         radius = random.uniform(1.0, 3.0)
         img = img.filter(ImageFilter.GaussianBlur(radius=radius))
     else:
-        # geometric corruption: add a black blocking square
         w, h = img.size
         d_block = ImageDraw.Draw(img)
-        # side length as fraction of image size
         side = random.uniform(0.2, 0.5) * min(w, h)
-        # top-left chosen so block stays inside the image
         x0 = random.uniform(0, w - side)
         y0 = random.uniform(0, h - side)
         x1 = x0 + side
