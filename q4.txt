@@ -1,0 +1,14 @@
+# Explanation of Q4
+
+## What I changed
+
+I applied data augmentation techniques to the training dataset.
+More specifically, I added noise to 15% of the training samples with Gaussian noise, blurring, and geometric transformations (add black square to the shape).
+
+## Why I think it helps
+
+__TODO__
+
+## The result
+
+Resulting shape accuracy of the best layer increased from 81.63% to 84.95%.

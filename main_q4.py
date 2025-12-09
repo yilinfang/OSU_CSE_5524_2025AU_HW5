@@ -47,13 +47,14 @@ COLOR_TO_IDX = {name: idx for idx, name in enumerate(COLORS_ORDER)}
 SHAPE_TO_IDX = {name: idx for idx, name in enumerate(SHAPES)}
 IMG_SIZE  = 64
 N_SAMPLES = 32000
-OUT_DIR   = 'data_folder'
-
+# OUT_DIR   = 'data_folder'
+OUT_DIR   = 'data_folder_augmented'
 
 def plot_samples_grid(out_dir: str = OUT_DIR,
                       display_inline: bool = True) -> None:
     """Generate an 8x3 (colors x shapes) sample grid image from the dataset."""
-    output_path = 'samples_q1.png'
+    # output_path = 'samples_q1.png'
+    output_path = 'samples_q4.png'
     BORDER_COLOR = 'white'
     BORDER_WIDTH = 1.5
     color_order = sorted(COLORS.keys())
@@ -173,6 +174,42 @@ def draw_shape(shape, color):
             rotated.append((cx + xr, cy + yr))
         d.polygon(rotated, fill=color)
         #### Your job 1 ends here ####
+
+    # Q4: Data augmentation
+    from PIL import ImageFilter
+
+    p_clean = 0.85
+    p_gauss = 0.05
+    p_blur = 0.05
+    p_geom = 0.05
+    r = random.random()
+    if r < p_clean:
+        pass  # no augmentation
+    elif r < p_clean + p_gauss:
+        # Gaussian pixel noise
+        arr = np.asarray(img).astype(np.float32) / 255.0
+        std = random.uniform(0.02, 0.10)
+        noise = np.random.normal(0.0, std, size=arr.shape).astype(np.float32)
+        arr_noisy = np.clip(arr + noise, 0.0, 1.0)
+        arr_noisy = (arr_noisy * 255.0).astype(np.uint8)
+        img = Image.fromarray(arr_noisy)
+    elif r < p_clean + p_gauss + p_blur:
+        # blur / glow
+        radius = random.uniform(1.0, 3.0)
+        img = img.filter(ImageFilter.GaussianBlur(radius=radius))
+    else:
+        # geometric corruption: add a black blocking square
+        w, h = img.size
+        d_block = ImageDraw.Draw(img)
+        # side length as fraction of image size
+        side = random.uniform(0.2, 0.5) * min(w, h)
+        # top-left chosen so block stays inside the image
+        x0 = random.uniform(0, w - side)
+        y0 = random.uniform(0, h - side)
+        x1 = x0 + side
+        y1 = y0 + side
+        d_block.rectangle([x0, y0, x1, y1], fill=(0, 0, 0))
+
     return img
 
 
